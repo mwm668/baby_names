@@ -7,13 +7,13 @@ import pandas as pd
 
 ## Set up git repo for it as well
 
-st.title('NZ Baby Names from 1954-2020')
+st.title('NZ Baby Names')
 
 # Define dataframe
 df = pd.read_csv('nz_baby_names.csv').sort_values(by=['year','rank'])
 
 # Set specific name
-st.text_input("Enter name", key="name")
+st.text_input("Enter baby name:", key="name")
 baby_name = st.session_state.name.capitalize()
 
 # Get df filtered on that name
@@ -32,4 +32,4 @@ st.bar_chart(name_df)
 
 
 # Disclaimer
-st.text('Note: data is only available where the name placed in the top 100 for girl or boy names')
+st.text('Note: data is only available where the name placed in the top 100 for girl or boy names between 1954 and 2020.')
