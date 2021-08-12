@@ -13,7 +13,7 @@ df = pd.read_csv('nz_baby_names.csv').sort_values(by=['year','rank'])
 ####################
 
 # Define columns for widget layout
-left_column, right_column = st.beta_columns(2)
+left_column, right_column = st.columns(2)
 
 # Select gender of name
 gender_select = left_column.radio('Gender',['Female','Male'])
