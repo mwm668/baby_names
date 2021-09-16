@@ -20,7 +20,7 @@ def display_results(baby_name):
 
     # Plot chart
     st.subheader("Number of {0}'s born by year".format(baby_name))
-    st.area_chart(name_df[['count']])
+    st.line_chart(name_df[['count']])
 
     # st.balloons()
 
@@ -39,6 +39,29 @@ def get_top_names(df,names_year=2020,names_gender='female',top_x=10):
 
     return top_df
 
+def display_metrics(baby_name):
+    # Get copy of df for our name
+    name_df2 = df[df.name == baby_name].copy(deep=True)
+    # Sort by highest count & return year
+    name_df2.sort_values(by='count',ascending=False,inplace=True)
+    highest_year = name_df2.iloc[0].year
+    highest_year_count = name_df2.iloc[0]['count']
+    total_count = name_df2['count'].sum()
+    
+    # Display metrics side-by-side
+    col1, col2, col3 = st.columns(3)
+    col1.metric("Highest Year",str(highest_year))
+    col2.metric("{0}s in {1}".format(baby_name,highest_year),human_format(highest_year_count))
+    col3.metric("Total {}s".format(baby_name),human_format(total_count))
+
+
+def human_format(num):
+    magnitude = 0
+    while abs(num) >= 1000:
+        magnitude += 1
+        num /= 1000.0
+    # add more suffixes if you need them
+    return '%.1f%s' % (num, ['', 'k', 'M', 'G', 'T', 'P'][magnitude])
 
 # Set title
 st.title('👶 Baby Names of NZ 👶')
@@ -72,6 +95,9 @@ if year_or_name_select == 'year':
     # Specfic YEAR analysis #
     #########################
 
+    # Set top number
+    top_x = 5
+
     # Select year
     year_select = st.slider(
     label="Year",
@@ -80,11 +106,11 @@ if year_or_name_select == 'year':
     )
 
     # Get top 5 names for gender
-    top_names_m = get_top_names(df=df,names_gender=gender_select,names_year=year_select,top_x=5)
+    top_names_m = get_top_names(df=df,names_gender=gender_select,names_year=year_select,top_x=top_x)
     baby_name = top_names_m['name'].iloc[0]
 
     # Header for buttons
-    st.subheader('Top 5 {0} names for {1}'.format(gender_select,year_select))
+    st.subheader('Top {0} {1} names for {2}'.format(top_x,gender_select,year_select))
 
     # Create buttons for top names
     for name in top_names_m['name']:
@@ -122,8 +148,11 @@ elif year_or_name_select == 'name':
 
     # Check that name is in list
     if len(df[df['name']==baby_name]) > 0:
-        # display results
+        # create kpi cards
+        display_metrics(baby_name)
+        # display results chart
         display_results(baby_name)
+        
     else:
         st.error('{0} has not placed in the top 100 between 1954 and 2020.'.format(baby_name))
 
