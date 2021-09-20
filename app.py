@@ -1,11 +1,15 @@
 import streamlit as st
+import altair as alt
 import numpy as np
 import pandas as pd
 pd.options.mode.chained_assignment = None  # default='warn'
 
 ######### Define functions ###########
 # Move these to another file eventually
-def display_results(baby_name):
+def display_results(df,baby_name):
+    """
+    Take a dataframe and name, generate chart of that name's history
+    """
     
     # Get df filtered on that name
     name_df = df[df.name == baby_name]
@@ -19,15 +23,34 @@ def display_results(baby_name):
     # st.bar_chart(name_df[['count']])
 
     # Plot chart
-    st.subheader("Number of {0}'s born by year".format(baby_name))
+    st.subheader("Number of {0}s born by year".format(baby_name))
     st.line_chart(name_df[['count']])
 
     # st.balloons()
 
-def get_top_names(df,names_year=2020,names_gender='female',top_x=10):
+def display_multiple_line_charts(df):
+    """
+    Given df and the name of category column, generate line chart
+    """
+    st.line_chart(df[['count']])
+
+
+def top_names_history(df,names_year,names_gender):
+    """
+    Take dataframe, gender and year, return df of complete history of top X names
+    """
+    
+    # Get top names for year
+    top_names_list = get_top_names(df,names_year=names_year,names_gender=names_gender)['name'].unique()
+
+    history_df = df[df['name'].isin(top_names_list)]
+
+    return history_df
+
+def get_top_names(df,names_year=2020,names_gender='female',top_x=5):
     """
     Takes a dataframe of names with year, gender, rank. 
-    Returns filtered dataframe for specified year, name and top X
+    Returns filtered dataframe for specified year, gender and top X names
     """    
 
     # Get the result of filtering df by year, gender, and top x
@@ -39,7 +62,11 @@ def get_top_names(df,names_year=2020,names_gender='female',top_x=10):
 
     return top_df
 
-def display_metrics(baby_name):
+def display_metrics(df,baby_name):
+    """
+    Take df and name and generate 3 metric cards in Streamlit
+    """
+
     # Get copy of df for our name
     name_df2 = df[df.name == baby_name].copy(deep=True)
     # Sort by highest count & return year
@@ -50,7 +77,7 @@ def display_metrics(baby_name):
     
     # Display metrics side-by-side
     col1, col2, col3 = st.columns(3)
-    col1.metric("Highest Year",str(highest_year))
+    col1.metric("Most Popular Year",str(highest_year))
     col2.metric("{0}s in {1}".format(baby_name,highest_year),human_format(highest_year_count))
     col3.metric("Total {}s".format(baby_name),human_format(total_count))
 
@@ -121,17 +148,32 @@ if year_or_name_select == 'year':
         if st.session_state[name]:
             baby_name = name
 
-    display_results(baby_name)
+    # display_results(df,baby_name)
+
+
+    # MOVE THIS INTO A FUNCTION
+    st.subheader("Number of {0}s born by year".format(baby_name))
     
-    # if st.checkbox('Show top names'):
-    #     left_column.write("{0} names for {1}".format(gender_select.capitalize(),year_select))
-    #     left_column.write(top_df)
-    #     baby_name = right_column.selectbox(options=top_df['name'], label='Select other top name')
-    #     display_results(baby_name)
-    # else:
-    #     # Use top name as default for specific name chart
-    #     baby_name = top_df.loc[1]['name']  
-    #     display_results(baby_name)
+    # Get history of top X names and plot
+    history_df = top_names_history(df,year_select,gender_select)[['year','name','count']]
+
+    # Create size column to highlight top name for current year
+    history_df['size'] = np.where(history_df['name']==baby_name, 2, 1)
+    
+    # Create altair chart object
+    selection = alt.selection_multi(fields=['name'], bind='legend')
+    c = alt.Chart(history_df).mark_line(interpolate='basis').encode(
+                alt.X('year(year):T', title='Year'),
+                alt.Y('count', title='Count'),
+                alt.Color('name', title='Name', scale=alt.Scale(scheme='category10')), 
+                alt.Size('size'),
+                tooltip=['name','year(year):T','count'],
+                opacity=alt.condition(selection, alt.value(1), alt.value(0.2))
+            ).add_selection(selection)
+
+    # Display the chart           
+    st.altair_chart(c, use_container_width=True)
+
 
 elif year_or_name_select == 'name':
     #########################
@@ -149,9 +191,9 @@ elif year_or_name_select == 'name':
     # Check that name is in list
     if len(df[df['name']==baby_name]) > 0:
         # create kpi cards
-        display_metrics(baby_name)
+        display_metrics(df,baby_name)
         # display results chart
-        display_results(baby_name)
+        display_results(df,baby_name)
         
     else:
         st.error('{0} has not placed in the top 100 between 1954 and 2020.'.format(baby_name))
