@@ -16,7 +16,7 @@ gender_select = st.radio('',['Female','Male'])
 gender_select = gender_select.lower()
 
 #########################
-# Specfic NAME analysis #
+# Specfic NAME analysis  #
 #########################
 
 # Set default name for use in input box

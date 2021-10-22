@@ -16,7 +16,7 @@ gender_select = st.radio('',['Female','Male'])
 gender_select = gender_select.lower()
 
 #########################
-# Specfic YEAR analysis #
+# Specfic YEAR analysis  #
 #########################
 
 # Set top number
